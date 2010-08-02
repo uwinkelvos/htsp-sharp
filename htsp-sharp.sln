@@ -1,0 +1,32 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "htsp-sharp", "htsp-sharp\htsp-sharp.csproj", "{44C62F70-C572-4410-8C40-DA40A4643401}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "playingfield", "playingfield\playingfield.csproj", "{D3546EF1-DC2B-4363-AFD6-7DC9AB5095B9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "gtk-client", "gtk-client\gtk-client.csproj", "{F7C55B52-1941-4C8A-8480-B0B4AAD0874D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x86 = Debug|x86
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{44C62F70-C572-4410-8C40-DA40A4643401}.Debug|x86.ActiveCfg = Debug|x86
+		{44C62F70-C572-4410-8C40-DA40A4643401}.Debug|x86.Build.0 = Debug|x86
+		{44C62F70-C572-4410-8C40-DA40A4643401}.Release|x86.ActiveCfg = Release|x86
+		{44C62F70-C572-4410-8C40-DA40A4643401}.Release|x86.Build.0 = Release|x86
+		{D3546EF1-DC2B-4363-AFD6-7DC9AB5095B9}.Debug|x86.ActiveCfg = Debug|x86
+		{D3546EF1-DC2B-4363-AFD6-7DC9AB5095B9}.Debug|x86.Build.0 = Debug|x86
+		{D3546EF1-DC2B-4363-AFD6-7DC9AB5095B9}.Release|x86.ActiveCfg = Release|x86
+		{D3546EF1-DC2B-4363-AFD6-7DC9AB5095B9}.Release|x86.Build.0 = Release|x86
+		{F7C55B52-1941-4C8A-8480-B0B4AAD0874D}.Debug|x86.ActiveCfg = Debug|x86
+		{F7C55B52-1941-4C8A-8480-B0B4AAD0874D}.Debug|x86.Build.0 = Debug|x86
+		{F7C55B52-1941-4C8A-8480-B0B4AAD0874D}.Release|x86.ActiveCfg = Release|x86
+		{F7C55B52-1941-4C8A-8480-B0B4AAD0874D}.Release|x86.Build.0 = Release|x86
+	EndGlobalSection
+	GlobalSection(MonoDevelopProperties) = preSolution
+		StartupItem = htsp-sharp\htsp-sharp.csproj
+	EndGlobalSection
+EndGlobal
