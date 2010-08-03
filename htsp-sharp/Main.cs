@@ -91,9 +91,6 @@ namespace htsp
 			reply = client.Receive();
 			Console.WriteLine("Received:\n" + reply.ToString(true));
 
-			Message mTest = new Message(reply.ToBin());
-			Console.WriteLine("Received:\n" + mTest.ToString(true));
-			
 			/*
 			var field = reply.GetListField("eventIds");
 			var val = (HtspType<long>)field[0];
