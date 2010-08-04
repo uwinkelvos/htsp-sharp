@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Threading;
 
@@ -27,9 +28,7 @@ namespace htsp
 			Console.WriteLine("Received:\n" + reply.ToString());
 			
 			request = new Message();
-			request.SetStringField("method", "subscribe");
-			request.SetIntField("channelId", 0xa);
-			request.SetIntField("subscriptionId", 0xabcdef);
+			request.SetStringField("method", "enableAsyncMetadata");
 			request.SetIntField("seq", seq++);
 
 			client.Send(request);
@@ -41,26 +40,58 @@ namespace htsp
 			int counter = 0;
 			while (true)
 			{
-				if (client.DataAvailable) {
-					Message msg = client.Receive();
-					try {
-						if ((msg.GetStringField("method") == "muxpkt") &&
-							 (msg.GetIntField("stream") != 0x1))
+				Message msg = client.Receive();
+				try {
+					if ((msg.GetStringField("method") == "channelAdd")
+						&& (msg.GetStringField("channelName") == "Das Erste")
+						)
 						{
 							Console.WriteLine("Received:\n" + msg.ToString(true));
-
-										
-							//break;
+							break;
 						}
-					} catch (KeyNotFoundException ex) {
-						
-					}
+				} catch (KeyNotFoundException ex) {
+					
 				}
-				if (Console.KeyAvailable) {
-					break;
-				}
-				Thread.Sleep(0);
 			}
+
+			request = new Message();
+			request.SetStringField("method", "subscribe");
+			request.SetIntField("channelId", 0x10);
+			request.SetIntField("subscriptionId", 0xabcdef);
+			request.SetIntField("seq", seq++);
+
+			client.Send(request);
+			Console.WriteLine("Send:\n" + request.ToString());
+
+			reply = client.Receive();
+			Console.WriteLine("Received:\n" + reply.ToString());
+			
+			counter = 0;
+			FileStream audio = File.Create("test.mp2");
+			FileStream video = File.Create("test.mpeg");
+			while (counter++ < 10000)
+			{
+				Message msg = client.Receive();
+				try {
+					if ((msg.GetStringField("method") == "muxpkt")
+						)
+					{
+						//Console.WriteLine("Received:\n" + msg.ToString(true));
+						long stream = msg.GetIntField("stream");
+						byte[] payload = msg.GetBinField("payload");
+						if (stream == 0x1) {
+							video.Write(payload, 0, payload.Length);
+						}
+						else if (stream == 0x2) {
+							audio.Write(payload, 0, payload.Length);
+						}
+					}
+				} catch (KeyNotFoundException ex) {
+					
+				}
+			}
+			audio.Close();
+			video.Close();
 
 			request = new Message();
 			request.SetStringField("method", "unsubscribe");
@@ -72,7 +103,6 @@ namespace htsp
 
 			reply = client.Receive();
 			Console.WriteLine("Received:\n" + reply.ToString());
-
 			
 			/*
 			*/

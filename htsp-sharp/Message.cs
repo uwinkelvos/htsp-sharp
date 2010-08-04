@@ -80,7 +80,7 @@ namespace htsp
 					return list;
 				}
 				default: {
-					Console.WriteLine("MessageType ({0}) not implented yet!", bin[offset-1]);
+					Console.WriteLine("MessageType ({0}) not implented yet!", fType);
 					/*
 					byte[] bVal = new byte[valLen];
 					Buffer.BlockCopy(bin, offset, bVal, 0, valLen);
@@ -285,7 +285,7 @@ namespace htsp
 				}
 			}
 			else {
-				sb.Append("---no fields---\n");
+				sb.Append(padding + "---no fields---\n");
 			}
 				
 			return sb.ToString();

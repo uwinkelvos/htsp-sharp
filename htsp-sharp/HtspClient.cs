@@ -39,8 +39,12 @@ namespace htsp
 			//Console.WriteLine("msgLen: {0}", msgLen);
 	
 			buf = new Byte[msgLen];
-			stream.Read(buf, 0, buf.Length);
-			//Console.WriteLine("Received: {0}", BitConverter.ToString(buf));
+			
+			int bytesread = 0;
+			while (bytesread < msgLen) {
+				bytesread += stream.Read(buf, bytesread, msgLen - bytesread);
+				//Console.WriteLine("Received: {0}", BitConverter.ToString(buf));
+			}
 			return new Message(buf);
 		}
 		
