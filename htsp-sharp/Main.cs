@@ -1,59 +1,20 @@
 using System;
-using System.Net;
-using System.Net.Sockets;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace htsp
 {
-	class HtspClient: IDisposable
-	{
-		private TcpClient client;
-		private NetworkStream stream;
-		
-		public HtspClient (string host, int port)	{
-			this.client = new TcpClient(host, port);
-			this.stream = client.GetStream();
-		}
-		
-		~HtspClient() {
-			Dispose();
-		}
-		public void Dispose() {
-			// tvheadend server autocloses connection on timeout!?
-			stream.Close();         
-			client.Close();
-		}
-		
-		public void Send(Message message)
-		{
-			byte[] buf=message.ToBin();
-			stream.Write(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(buf.Length)),0,4);
-			stream.Write(buf,0,buf.Length);
-			//Console.WriteLine("Send: {0}", BitConverter.ToString(buf));
-		}
-		
-		public Message Receive() {		
-			byte[] buf = new Byte[4];
-			// if no data is on the stream we should throw an error!
-			stream.Read(buf, 0, buf.Length);
-			int msgLen = Message.ParseValueLength(buf,0);
-			//Console.WriteLine("msgLen: {0}", msgLen);
-
-			buf = new Byte[msgLen];
-			stream.Read(buf, 0, buf.Length);
-			//Console.WriteLine("Received: {0}", BitConverter.ToString(buf));
-			return new Message(buf);
-		}
-	}
-	
 	class MainClass
 	{
 		public static void Main (string[] args)
 		{
 			var client = new HtspClient("holzi", 9982);
 			int seq = 1;
-			
-			Message request = new Message();
+
+			Message request;
+			Message reply;
+
+			request = new Message();
 			request.SetStringField("method", "hello");
 			request.SetStringField("clientname", "htsp-sharp");
 			request.SetIntField("htspversion", 5);
@@ -62,9 +23,61 @@ namespace htsp
 			client.Send(request);
 			Console.WriteLine("Send:\n" + request.ToString());
 
-			Message reply = client.Receive();
+			reply = client.Receive();
+			Console.WriteLine("Received:\n" + reply.ToString());
+			
+			request = new Message();
+			request.SetStringField("method", "subscribe");
+			request.SetIntField("channelId", 0xa);
+			request.SetIntField("subscriptionId", 0xabcdef);
+			request.SetIntField("seq", seq++);
+
+			client.Send(request);
+			Console.WriteLine("Send:\n" + request.ToString());
+
+			reply = client.Receive();
+			Console.WriteLine("Received:\n" + reply.ToString());
+			
+			int counter = 0;
+			while (true)
+			{
+				if (client.DataAvailable) {
+					Message msg = client.Receive();
+					try {
+						if ((msg.GetStringField("method") == "muxpkt") &&
+							 (msg.GetIntField("stream") != 0x1))
+						{
+							Console.WriteLine("Received:\n" + msg.ToString(true));
+
+										
+							//break;
+						}
+					} catch (KeyNotFoundException ex) {
+						
+					}
+				}
+				if (Console.KeyAvailable) {
+					break;
+				}
+				Thread.Sleep(0);
+			}
+
+			request = new Message();
+			request.SetStringField("method", "unsubscribe");
+			request.SetIntField("subscriptionId", 0xabcdef);
+			request.SetIntField("seq", seq++);
+
+			client.Send(request);
+			Console.WriteLine("Send:\n" + request.ToString());
+
+			reply = client.Receive();
 			Console.WriteLine("Received:\n" + reply.ToString());
 
+			
+			/*
+			*/
+			
+			#region stuff
 			/*
 			request = new Message();
 			request.SetStringField("method", "getSysTime");
@@ -80,6 +93,7 @@ namespace htsp
 			Console.WriteLine(new DateTime(1970, 1, 1, 0, 0, 0, 0).AddSeconds(unixdate));
 			 */
 			
+			/*
 			request = new Message();
 			request.SetStringField("method", "epgQuery");
 			request.SetStringField("query", "sport");
@@ -91,7 +105,6 @@ namespace htsp
 			reply = client.Receive();
 			Console.WriteLine("Received:\n" + reply.ToString(true));
 
-			/*
 			var field = reply.GetListField("eventIds");
 			var val = (HtspType<long>)field[0];
 			
@@ -111,6 +124,7 @@ namespace htsp
 				//Console.WriteLine("+++ SubMessage\n{0}--- SubMessage\n",((HtspType<Message>)item).Value.ToString());
 			}
 			*/
+			#endregion
 			
 			// Close everything.
 			client.Dispose();

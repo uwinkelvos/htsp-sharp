@@ -13,12 +13,32 @@ namespace htsp
 		DBL  = 6,
 	}
 
+	public interface IHtspBaseType: IHtspType
+	{
+	}
+
 	public interface IHtspType
 	{
 	}
+
 	
-	public class HtspType<T> : IHtspType
-//		where T: long, Message, string, byte[], List<IHtspType>
+	// we probably need an list type!
+	public class HtspListType<T> : List<IHtspBaseType>, IHtspType 
+		where T: IHtspBaseType // necessary?
+	{
+		public HtspListType()
+			: base()
+		{
+		}
+		public HtspListType(int capacity)
+			: base(capacity)
+		{
+		}
+	}
+	
+	// you can do really stupid things with lists in lists, etc!
+	public class HtspType<T> : IHtspBaseType
+		//where T: long, Message, string, byte[]
 	{
 		private T val;
 

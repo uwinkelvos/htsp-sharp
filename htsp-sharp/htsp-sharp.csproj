@@ -41,6 +41,7 @@
     <Compile Include="HtspType.cs" />
     <Compile Include="Message.cs" />
     <Compile Include="UnitTests\MessageTest.cs" />
+    <Compile Include="HtspClient.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

@@ -64,7 +64,7 @@ namespace htsp
 					return new HtspType<byte[]>(bVal);
 				}
 				case TypeID.LIST: {
-					List<IHtspType> list = new List<IHtspType>(16);
+					HtspListType<IHtspBaseType> list = new HtspListType<IHtspBaseType>(16);
 					int lOffset = 0;
 					while (lOffset < valLen) {
 						TypeID lfType = (TypeID)bin[offset + lOffset++];
@@ -74,16 +74,18 @@ namespace htsp
 						lOffset += 4;
 						//string name = Encoding.UTF8.GetString(bin,offset + lOffset,nameLen);
 						lOffset += lNameLen;
-						list.Add(ParseField(lfType, bin, offset + lOffset, lValLen));
+						list.Add((IHtspBaseType)ParseField(lfType, bin, offset + lOffset, lValLen));
 						lOffset += lValLen;
 					}
-					return new HtspType<List<IHtspType> >(list);
+					return list;
 				}
 				default: {
 					Console.WriteLine("MessageType ({0}) not implented yet!", bin[offset-1]);
+					/*
 					byte[] bVal = new byte[valLen];
 					Buffer.BlockCopy(bin, offset, bVal, 0, valLen);
 					Console.WriteLine(BitConverter.ToString(bVal));
+					*/
 					return null;
 				}
 			}
@@ -113,35 +115,78 @@ namespace htsp
 			return ((HtspType<long>)fields[name]).Value;
 		}
 		public void SetIntField(string name, long val) {
-			fields[name] = new HtspType<long>(val);
+			if (fields.ContainsKey(name)) {
+				// implement own exception types!
+				throw new Exception("field does alread exist!");
+			}
+			else {
+				fields[name] = new HtspType<long>(val);
+			}
 		}
 		
 		public string GetStringField(string name) {
 			return ((HtspType<string>)fields[name]).Value;
 		}
 		public void SetStringField(string name, string val) {
-			fields[name] = new HtspType<string>(val);
+			if (fields.ContainsKey(name)) {
+				// implement own exception types!
+				throw new Exception("field does alread exist!");
+			}
+			else {
+				fields[name] = new HtspType<string>(val);
+			}
 		}
 
 		public byte[] GetBinField(string name) {
 			return ((HtspType<byte[]>)fields[name]).Value;
 		}
 		public void SetBinField(string name, byte[] val) {
-			fields[name] = new HtspType<byte[]>(val);
+			if (fields.ContainsKey(name)) {
+				// implement own exception types!
+				throw new Exception("field does alread exist!");
+			}
+			else {
+				fields[name] = new HtspType<byte[]>(val);
+			}
 		}
 
-		public List<IHtspType> GetListField(string name) {
-			return ((HtspType<List<IHtspType> >)fields[name]).Value;
+		public HtspListType<IHtspBaseType> GetListField(string name) {
+			return ((HtspListType<IHtspBaseType>)fields[name]);
 		}
-		public void SetListField(string name, List<IHtspType> val) {
-			fields[name] = new HtspType<List<IHtspType> >(val);
+		public void SetListField(string name, HtspListType<IHtspBaseType> val) {
+			if (fields.ContainsKey(name)) {
+				// implement own exception types!
+				throw new Exception("field does alread exist!");
+			}
+			// TODO: check for possible circles!
+			/*
+			else if () {
+				// implement own exception types!
+				// this gets really ugly, because of all the recursive function calls
+				throw new Exception("Message or List must not cotain itself!");
+			}
+			*/
+			else {
+				fields[name] = (val);
+			}
 		}
 
 		public Message GetMessageField(string name) {
 			return ((HtspType<Message>)fields[name]).Value;
 		}
 		public void SetMessageField(string name, Message val) {
-			fields[name] = new HtspType<Message>(val);
+			if (fields.ContainsKey(name)) {
+				// implement own exception types!
+				throw new Exception("field does alread exist!");
+			}
+			else if (this == val) {
+				// implement own exception types!
+				// this gets really ugly, because of all the recursive function calls
+				throw new Exception("Message must not cotain itself!");
+			}
+			else {
+				fields[name] = new HtspType<Message>(val);
+			}
 		}
 		
 		public int FieldCount {
@@ -150,10 +195,8 @@ namespace htsp
 		#endregion
 		
 		#region representations
-
 		private static void FieldToBin(IHtspType field, out byte bType, out byte[] bVal) {
 			if (false); //just a dummy
-			// this is untested yet!
 			else if (field is HtspType<Message>) {
 				bType = (byte)TypeID.MAP;
 				Message val = ((HtspType<Message>)field).Value;
@@ -180,10 +223,10 @@ namespace htsp
 				bType = (byte)TypeID.BIN;
 				bVal = ((HtspType<byte[]>)field).Value;
 			}
-			else if (field is HtspType<List<IHtspType> >) {
+			else if (field is HtspListType<IHtspBaseType>) {
 				bType = (byte)TypeID.LIST;
 				MemoryStream mstream = new MemoryStream(1460);
-				foreach(IHtspType item in ((HtspType<List<IHtspType> >)field).Value) {
+				foreach(IHtspType item in ((HtspListType<IHtspBaseType>)field)) {
 					byte lbType;
 					byte[] lbVal;
 					FieldToBin(item, out lbType, out lbVal);
@@ -207,7 +250,6 @@ namespace htsp
 			}
 		}
 		
-		// this method needs a good amount of abstraction to support lists
 		public byte[] ToBin() {
 			MemoryStream mstream = new MemoryStream(1460);//max tcp müssten reichen, oder?
 			foreach (KeyValuePair<string, IHtspType>fieldPair in fields) {
@@ -230,45 +272,51 @@ namespace htsp
 		public override string ToString() {
 			return ToString(false);
 		}
-		
+
 		public string ToString(bool debug) {
+			return ToString("", debug);
+		}
+		
+		public string ToString(string padding, bool debug) {
 			var sb = new StringBuilder();
-			
-			foreach (KeyValuePair<string, IHtspType>field in fields) {
-				sb.AppendFormat("{0}: {1}\n", field.Key, FieldToString(field.Value, debug));
+			if (FieldCount > 0) {
+				foreach (KeyValuePair<string, IHtspType>field in fields) {
+					sb.AppendFormat(padding + "{0}: {1}", field.Key, FieldToString(field.Value, padding, debug));
+				}
 			}
-			
+			else {
+				sb.Append("---no fields---\n");
+			}
+				
 			return sb.ToString();
 		}
 
-		private static string FieldToString(IHtspType field, bool debug) {
+		private static string FieldToString(IHtspType field, string padding, bool debug) {
 			if (false); //just a dummy
 			else if (field is HtspType<Message>) {
 				var sb = new StringBuilder();
-				sb.AppendFormat("(msg) [{0} fields]", ((HtspType<Message>)field).Value.FieldCount);
-				sb.AppendFormat("\n+++ Message +++\n");
-				sb.AppendFormat("{0}", ((HtspType<Message>)field).Value.ToString(debug));
-				sb.AppendFormat("--- Message ---");
+				sb.AppendFormat(padding + "(msg) [{0} fields]\n", ((HtspType<Message>)field).Value.FieldCount);
+				if (debug) {
+					sb.Append(((HtspType<Message>)field).Value.ToString(padding + "   ", debug));
+				}
 				return sb.ToString();
 			}
 			else if (field is HtspType<long>) {
-				return String.Format("(int) 0x{0}", ((HtspType<long>)field).Value.ToString("x"));
+				return String.Format(padding + "(int) 0x{0}\n", ((HtspType<long>)field).Value.ToString("x"));
 			}
 			else if (field is HtspType<string>) {
-				return String.Format("(str) \"{0}\"", ((HtspType<string>)field).Value);
+				return String.Format(padding + "(str) \"{0}\"\n", ((HtspType<string>)field).Value);
 			}
 			else if (field is HtspType<byte[]>) {
-				return String.Format("(bin) [{0} bytes]", ((HtspType<byte[]>)field).Value.Length);
+				return String.Format(padding + "(bin) [{0} bytes]\n", ((HtspType<byte[]>)field).Value.Length);
 			}
-			else if (field is HtspType<List<IHtspType> >) {
+			else if (field is HtspListType<IHtspBaseType>) {
 				var sb = new StringBuilder();
-				sb.AppendFormat("(lst) [{0} items]", ((HtspType<List<IHtspType> >)field).Value.Count);
+				sb.AppendFormat(padding + "(lst) [{0} items]\n", ((HtspListType<IHtspBaseType>)field).Count);
 				if (debug) {
-					sb.AppendFormat("\n+++ List +++\n");
-					foreach(IHtspType item in ((HtspType<List<IHtspType> >)field).Value) {
-						sb.AppendFormat("{0}\n", FieldToString(item, debug));
+					foreach(IHtspBaseType item in ((HtspListType<IHtspBaseType>)field)) {
+						sb.AppendFormat(padding + "{0}", FieldToString(item, padding + "   ", debug));
 					}
-					sb.AppendFormat("--- List ---");
 				}
 				return sb.ToString();
 			}
