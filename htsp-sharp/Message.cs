@@ -13,9 +13,15 @@ namespace htsp
 		#endregion
 		
 		#region ctors
-		public Message()
+		private Message()
 		{
 			this.fields = new Dictionary<string, IHtspType>();
+		}
+		
+		public Message(string method)
+			: this()
+		{
+			SetStringField("method", method);
 		}
 		
 		public Message(byte[] bin, int offset, int count)
@@ -29,6 +35,12 @@ namespace htsp
 		{
 		}
 		#endregion
+		
+		// just for callers convenience
+		// throws key not found exception, if method not yet set. this can be considered as a user's fault in any case.
+		public string Method {
+			get { return GetStringField("method"); }
+		}
 		
 		#region bin parsers
 		public static int ParseValueLength(byte[] bin, int offset) {
@@ -49,8 +61,10 @@ namespace htsp
 		{
 			switch(fType) {
 				case TypeID.MAP: {
-					Message message = new Message(bin, offset, valLen);
-					return new HtspType<Message>(message);
+					byte[] bVal = new byte[valLen];
+					Buffer.BlockCopy(bin, offset, bVal, 0, valLen);
+					Message msg = new Message(bVal, 0, valLen);
+					return new HtspType<Message>(msg);
 				}
 				case TypeID.S64: {
 					return new HtspType<long>(ParseIntField(bin, offset, valLen));
@@ -68,10 +82,10 @@ namespace htsp
 					int lOffset = 0;
 					while (lOffset < valLen) {
 						TypeID lfType = (TypeID)bin[offset + lOffset++];
-						// listfields dont have a name! we should probaly check that.
 						int lNameLen = bin[offset + lOffset++];
 						int lValLen = ParseValueLength(bin, offset + lOffset);
 						lOffset += 4;
+						// listfields dont have a name! we should probaly check that.
 						//string name = Encoding.UTF8.GetString(bin,offset + lOffset,nameLen);
 						lOffset += lNameLen;
 						list.Add((IHtspBaseType)ParseField(lfType, bin, offset + lOffset, lValLen));
@@ -158,7 +172,7 @@ namespace htsp
 				// implement own exception types!
 				throw new Exception("field does alread exist!");
 			}
-			// TODO: check for possible circles!
+			// TODO: check for possible cycle!
 			/*
 			else if () {
 				// implement own exception types!

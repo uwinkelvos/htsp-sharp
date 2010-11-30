@@ -42,6 +42,8 @@
     <Compile Include="Message.cs" />
     <Compile Include="UnitTests\MessageTest.cs" />
     <Compile Include="HtspClient.cs" />
+    <Compile Include="Channel.cs" />
+    <Compile Include="Tag.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
